@@ -1,8 +1,7 @@
 from keras.layers.recurrent import LSTM
 import keras.backend as K
-#import tensorflow as tf
 
-class LSTMpeephole(LSTM):
+class LSTMPeephole(LSTM):
     def __init__(self, **kwargs):
         super(LSTMpeephole, self).__init__(**kwargs)
 
@@ -25,13 +24,7 @@ class LSTMpeephole(LSTM):
         c_tm1 = states[1]
         dp_mask = states[2]
         rec_dp_mask = states[3]
-        '''
-        inputs_sum = K.sum(inputs, axis=1)
-        zeros = K.zeros((inputs.shape[0], 1))
-        def f1(): return inputs
-        def f2(): return h_tm1
-        r = tf.case({tf.equal(inputs_sum, zeros): f2}, default=f1)
-        '''
+
         if self.implementation == 2:
             z = K.dot(inputs * dp_mask[0], self.kernel)
             z += K.dot(h_tm1 * rec_dp_mask[0], self.recurrent_kernel)
