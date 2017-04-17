@@ -19,3 +19,8 @@ class PaddingZero(Layer):
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0], self.max_length, input_shape[1])
+
+    def get_config(self):
+        config = {'max_length': self.max_length}
+        base_config = super(PaddingZero, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
