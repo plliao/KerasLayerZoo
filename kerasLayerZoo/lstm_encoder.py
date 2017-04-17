@@ -1,13 +1,12 @@
 from keras.layers.recurrent import LSTM
 import keras.backend as K
-import tensorflow as tf
 
-class LSTMDecoder(LSTM):
+class LSTMEncoder(LSTM):
     def __init__(self, **kwargs):
-        super(LSTMDecoder, self).__init__(**kwargs)
+        super(LSTMEncoder, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        super(LSTMDecoder, self).build(input_shape)
+        super(LSTMEncoder, self).build(input_shape)
 
     def step(self, inputs, states):
         h_tm1 = states[0]
@@ -15,17 +14,8 @@ class LSTMDecoder(LSTM):
         dp_mask = states[2]
         rec_dp_mask = states[3]
         
-        inputs_sum = tf.reduce_sum(inputs)
-        
-        def inputs_f(): return inputs
-        def hidden_f(): return h_tm1
-        current_inputs = tf.case(
-            [(tf.equal(inputs_sum, 0.0), hidden_f)], 
-            default=inputs_f
-        )
-        
         if self.implementation == 2:
-            z = K.dot(current_inputs * dp_mask[0], self.kernel)
+            z = K.dot(inputs * dp_mask[0], self.kernel)
             z += K.dot(c_tm1 * rec_dp_mask[0], self.recurrent_kernel)
             if self.use_bias:
                 z = K.bias_add(z, self.bias)
@@ -41,15 +31,15 @@ class LSTMDecoder(LSTM):
             o = self.recurrent_activation(z3)
         else:
             if self.implementation == 0:
-                x_i = current_inputs[:, :self.units]
-                x_f = current_inputs[:, self.units: 2 * self.units]
-                x_c = current_inputs[:, 2 * self.units: 3 * self.units]
-                x_o = current_inputs[:, 3 * self.units:]
+                x_i = inputs[:, :self.units]
+                x_f = inputs[:, self.units: 2 * self.units]
+                x_c = inputs[:, 2 * self.units: 3 * self.units]
+                x_o = inputs[:, 3 * self.units:]
             elif self.implementation == 1:
-                x_i = K.dot(current_inputs * dp_mask[0], self.kernel_i) + self.bias_i
-                x_f = K.dot(current_inputs * dp_mask[1], self.kernel_f) + self.bias_f
-                x_c = K.dot(current_inputs * dp_mask[2], self.kernel_c) + self.bias_c
-                x_o = K.dot(current_inputs * dp_mask[3], self.kernel_o) + self.bias_o
+                x_i = K.dot(inputs * dp_mask[0], self.kernel_i) + self.bias_i
+                x_f = K.dot(inputs * dp_mask[1], self.kernel_f) + self.bias_f
+                x_c = K.dot(inputs * dp_mask[2], self.kernel_c) + self.bias_c
+                x_o = K.dot(inputs * dp_mask[3], self.kernel_o) + self.bias_o
             else:
                 raise ValueError('Unknown `implementation` mode.')
 
@@ -71,4 +61,4 @@ class LSTMDecoder(LSTM):
         return h, [h, c]
 
     def compute_output_shape(self, input_shape):
-        return super(LSTMDecoder, self).compute_output_shape(input_shape)
+        return super(LSTMEncoder, self).compute_output_shape(input_shape)
